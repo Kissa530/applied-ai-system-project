@@ -1,0 +1,49 @@
+flowchart TD
+    U([User profile + optional free-text request]) --> V
+
+    subgraph GUARD[Guardrails and logging]
+        V[validate_profile<br/>unknown genre/mood, energy outside 0-1, empty input]
+        LOG[(logs/app.log)]
+    end
+
+    V -- invalid --> FB[Safe fallback defaults + warning]
+    FB --> R
+    V -- valid --> R
+
+    subgraph RAG[Retrieval - RAG]
+        KB[(knowledge/taste_kb.json<br/>genre and mood entries + related weights)]
+        R[Retriever<br/>src/retriever.py]
+        KB --> R
+    end
+
+    R -- matched entries + related moods/genres --> S
+
+    subgraph CORE[Recommender core]
+        CSV[(data/songs.csv)]
+        S[score_song<br/>base points + partial credit from retrieved related labels]
+        RK[Rank songs, take top K]
+        CSV --> S --> RK
+    end
+
+    RK --> E[Explanation builder<br/>retrieved description + score reasons]
+    RK --> C[Confidence score<br/>top score / max score]
+    C -- below threshold --> LC[Flag as low confidence]
+    E --> OUT([Top K recommendations with explanation + confidence])
+    LC --> OUT
+
+    OUT --> H{{Human review of output}}
+
+    subgraph EVAL[Reliability testing]
+        T[evaluate.py<br/>fixed profiles + bad inputs, pass/fail summary]
+        PT[pytest unit tests]
+    end
+
+    T -. runs .-> V
+    T -. checks .-> OUT
+    PT -. checks .-> S
+    H -. feedback informs .-> KB
+
+    V -.-> LOG
+    R -.-> LOG
+    S -.-> LOG
+    T -.-> LOG
