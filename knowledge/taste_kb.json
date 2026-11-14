@@ -1,0 +1,172 @@
+{
+  "moods": {
+    "happy": {
+      "description": "bright, upbeat music that lifts your spirits and makes you want to smile",
+      "typical_energy": 0.80,
+      "typical_tempo": 120,
+      "keywords": ["happy", "upbeat", "cheerful", "sunny", "bright", "smile", "positive", "fun"],
+      "related": {"euphoric": 0.7, "playful": 0.6, "triumphant": 0.5, "nostalgic": 0.2}
+    },
+    "chill": {
+      "description": "low-energy, unhurried music for studying, relaxing or winding down",
+      "typical_energy": 0.40,
+      "typical_tempo": 78,
+      "keywords": ["chill", "calm", "study", "studying", "unwind", "quiet", "lazy", "background", "laid-back"],
+      "related": {"relaxed": 0.7, "serene": 0.5, "focused": 0.5, "dreamy": 0.5}
+    },
+    "intense": {
+      "description": "driving, powerful music with a hard edge, good for workouts and adrenaline",
+      "typical_energy": 0.92,
+      "typical_tempo": 150,
+      "keywords": ["intense", "workout", "gym", "powerful", "aggressive", "adrenaline", "hard", "driving", "run", "running"],
+      "related": {"triumphant": 0.4, "euphoric": 0.4, "moody": 0.3}
+    },
+    "relaxed": {
+      "description": "easygoing, gentle music that feels like a slow afternoon with nowhere to be",
+      "typical_energy": 0.37,
+      "typical_tempo": 90,
+      "keywords": ["relaxed", "relax", "easygoing", "mellow", "gentle", "slow", "cozy", "coffee", "lounge"],
+      "related": {"chill": 0.7, "serene": 0.6, "dreamy": 0.5, "nostalgic": 0.3, "focused": 0.3}
+    },
+    "moody": {
+      "description": "brooding, atmospheric music with a darker, late-night feel",
+      "typical_energy": 0.75,
+      "typical_tempo": 110,
+      "keywords": ["moody", "brooding", "dark", "night", "atmospheric", "late", "drive", "driving"],
+      "related": {"melancholy": 0.5, "dreamy": 0.4, "intense": 0.3}
+    },
+    "focused": {
+      "description": "steady, unobtrusive music that helps you concentrate on work or study",
+      "typical_energy": 0.40,
+      "typical_tempo": 80,
+      "keywords": ["focus", "focused", "concentrate", "concentration", "work", "working", "coding", "study", "homework"],
+      "related": {"chill": 0.6, "relaxed": 0.4, "serene": 0.3}
+    },
+    "nostalgic": {
+      "description": "warm, wistful music that recalls memories and past places",
+      "typical_energy": 0.64,
+      "typical_tempo": 106,
+      "keywords": ["nostalgic", "nostalgia", "memories", "remember", "wistful", "throwback", "old", "past", "hometown"],
+      "related": {"melancholy": 0.5, "dreamy": 0.5, "relaxed": 0.3, "happy": 0.2}
+    },
+    "serene": {
+      "description": "peaceful, spacious music that feels still and quiet, close to meditation",
+      "typical_energy": 0.25,
+      "typical_tempo": 65,
+      "keywords": ["serene", "peaceful", "meditation", "meditate", "still", "tranquil", "sleep", "spa", "stillness"],
+      "related": {"chill": 0.6, "relaxed": 0.6, "dreamy": 0.5}
+    },
+    "playful": {
+      "description": "light, bouncy music with a sense of humor and an easy groove",
+      "typical_energy": 0.73,
+      "typical_tempo": 95,
+      "keywords": ["playful", "bouncy", "silly", "lighthearted", "groove", "breezy", "carefree", "beach"],
+      "related": {"happy": 0.6, "euphoric": 0.5}
+    },
+    "melancholy": {
+      "description": "sad, reflective music that sits with a heavy or bittersweet feeling",
+      "typical_energy": 0.30,
+      "typical_tempo": 70,
+      "keywords": ["melancholy", "sad", "sadness", "bittersweet", "reflective", "lonely", "rainy", "cry", "heartbreak"],
+      "related": {"moody": 0.5, "nostalgic": 0.5, "dreamy": 0.4, "serene": 0.3}
+    },
+    "euphoric": {
+      "description": "ecstatic, high-peak music built for dancing and big shared moments",
+      "typical_energy": 0.95,
+      "typical_tempo": 125,
+      "keywords": ["euphoric", "ecstatic", "dance", "dancing", "party", "celebrate", "peak", "club"],
+      "related": {"happy": 0.7, "playful": 0.5, "triumphant": 0.5}
+    },
+    "dreamy": {
+      "description": "hazy, floating music that feels half asleep and drifts along",
+      "typical_energy": 0.45,
+      "typical_tempo": 80,
+      "keywords": ["dreamy", "hazy", "floating", "drift", "ethereal", "daydream", "wander", "twilight"],
+      "related": {"serene": 0.5, "chill": 0.5, "melancholy": 0.4, "nostalgic": 0.4}
+    },
+    "triumphant": {
+      "description": "soaring, victorious music that sounds like finishing something hard",
+      "typical_energy": 0.80,
+      "typical_tempo": 110,
+      "keywords": ["triumphant", "victory", "victorious", "soaring", "win", "winning", "anthem", "epic", "proud"],
+      "related": {"euphoric": 0.5, "happy": 0.5, "intense": 0.4}
+    }
+  },
+  "genres": {
+    "pop": {
+      "description": "catchy, polished songs built around hooks and clear choruses",
+      "keywords": ["pop", "catchy", "hook", "radio", "chorus", "mainstream"],
+      "related": {"indie pop": 0.7, "funk": 0.4, "house": 0.4, "synthwave": 0.3}
+    },
+    "indie pop": {
+      "description": "pop with a more independent, homemade and often brighter feel",
+      "keywords": ["indie", "independent", "bedroom", "alternative"],
+      "related": {"pop": 0.7, "folk": 0.4, "synthwave": 0.3}
+    },
+    "lofi": {
+      "description": "soft, slightly dusty beats made for studying and background listening",
+      "keywords": ["lofi", "lo-fi", "beats", "study", "dusty", "background"],
+      "related": {"ambient": 0.6, "jazz": 0.5, "classical": 0.3}
+    },
+    "rock": {
+      "description": "guitar-driven music with a strong backbeat and a lot of attitude",
+      "keywords": ["rock", "guitar", "guitars", "band", "riff", "riffs", "drums"],
+      "related": {"metal": 0.6, "blues": 0.4, "country": 0.3}
+    },
+    "ambient": {
+      "description": "slow, textured soundscapes with little rhythm and lots of space",
+      "keywords": ["ambient", "soundscape", "soundscapes", "atmosphere", "texture", "space", "drone"],
+      "related": {"lofi": 0.6, "classical": 0.5, "jazz": 0.3}
+    },
+    "jazz": {
+      "description": "improvised, swinging music with rich chords and a relaxed feel",
+      "keywords": ["jazz", "swing", "improvised", "saxophone", "piano", "cafe", "coffee"],
+      "related": {"blues": 0.6, "lofi": 0.5, "funk": 0.4, "classical": 0.3}
+    },
+    "synthwave": {
+      "description": "retro electronic music with glossy synthesizers and an 80s night-drive feel",
+      "keywords": ["synthwave", "synth", "retro", "electronic", "80s", "neon", "night"],
+      "related": {"house": 0.5, "pop": 0.3}
+    },
+    "country": {
+      "description": "story-driven songs with acoustic guitar and a warm, down-to-earth sound",
+      "keywords": ["country", "twang", "acoustic", "storytelling", "road", "rural"],
+      "related": {"folk": 0.7, "blues": 0.4, "rock": 0.3}
+    },
+    "metal": {
+      "description": "loud, heavy music with distorted guitars and fast, forceful drums",
+      "keywords": ["metal", "heavy", "distorted", "loud", "headbang"],
+      "related": {"rock": 0.6}
+    },
+    "reggae": {
+      "description": "laid-back offbeat rhythms with a sunny, easygoing groove",
+      "keywords": ["reggae", "offbeat", "island", "skank", "sunny", "jamaican"],
+      "related": {"funk": 0.4, "pop": 0.3, "folk": 0.2}
+    },
+    "classical": {
+      "description": "orchestral and solo instrumental music, often piano or strings",
+      "keywords": ["classical", "orchestra", "orchestral", "piano", "strings", "symphony", "instrumental"],
+      "related": {"ambient": 0.5, "jazz": 0.3, "folk": 0.2}
+    },
+    "funk": {
+      "description": "groove-first music with tight bass lines and a danceable rhythm",
+      "keywords": ["funk", "groove", "bass", "bassline", "danceable", "rhythm"],
+      "related": {"jazz": 0.4, "pop": 0.4, "house": 0.4, "reggae": 0.4, "blues": 0.3}
+    },
+    "blues": {
+      "description": "expressive, soulful music built on bent notes and honest emotion",
+      "keywords": ["blues", "soulful", "bent", "twelve-bar", "guitar"],
+      "related": {"jazz": 0.6, "rock": 0.4, "country": 0.4, "folk": 0.3}
+    },
+    "house": {
+      "description": "steady four-on-the-floor electronic dance music for clubs",
+      "keywords": ["house", "club", "electronic", "dance", "four-on-the-floor", "edm"],
+      "related": {"synthwave": 0.5, "pop": 0.4, "funk": 0.4}
+    },
+    "folk": {
+      "description": "acoustic, storytelling music with simple arrangements and sing-along warmth",
+      "keywords": ["folk", "acoustic", "storytelling", "sing-along", "campfire", "banjo"],
+      "related": {"country": 0.7, "indie pop": 0.4, "blues": 0.3}
+    }
+  }
+}
