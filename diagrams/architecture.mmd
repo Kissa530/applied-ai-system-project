@@ -1,49 +1,45 @@
 flowchart TD
-    U([User profile + optional free-text request]) --> V
+    IN1([Structured profile<br/>genre, mood, energy, tempo])
+    IN2([Free-text request<br/>e.g. 'something calm to study to'])
 
-    subgraph GUARD[Guardrails and logging]
-        V[validate_profile<br/>unknown genre/mood, energy outside 0-1, empty input]
-        LOG[(logs/app.log)]
+    IN2 --> PFT["retriever.profile_from_text<br/>keyword search of the knowledge base<br/>genre set only if named"]
+    PFT -- no match --> NOMATCH[/"Ask user to name a mood or genre"/]
+    PFT --> VAL
+    IN1 --> VAL
+
+    subgraph GUARD["1. Guardrails - src/guardrails.py"]
+        VAL["validate_profile<br/>reject empty or non-numeric input<br/>clamp out-of-range values<br/>warn on unknown labels"]
     end
 
-    V -- invalid --> FB[Safe fallback defaults + warning]
-    FB --> R
-    V -- valid --> R
+    VAL -- rejected --> REJ[/"Rejected with clear error"/]
+    VAL -- "clean profile" --> RET
 
-    subgraph RAG[Retrieval - RAG]
-        KB[(knowledge/taste_kb.json<br/>genre and mood entries + related weights)]
-        R[Retriever<br/>src/retriever.py]
-        KB --> R
+    subgraph RAG["2. Retrieval - src/retriever.py"]
+        KB[("knowledge/taste_kb.json<br/>descriptions + related weights")]
+        RET["KnowledgeBase.retrieve<br/>look up the user's genre and mood"]
+        KB --> RET
     end
 
-    R -- matched entries + related moods/genres --> S
-
-    subgraph CORE[Recommender core]
-        CSV[(data/songs.csv)]
-        S[score_song<br/>base points + partial credit from retrieved related labels]
-        RK[Rank songs, take top K]
-        CSV --> S --> RK
+    subgraph CORE["3. Recommender - src/recommender.py"]
+        SC["score_song_rag<br/>original score + partial credit<br/>for related genre and mood"]
+        RANK["Rank songs, keep top K"]
+        EXPL["build_explanation<br/>uses the retrieved descriptions"]
+        CONF["Confidence = score / 4.5<br/>flag low confidence and energy gap"]
+        SC --> RANK --> EXPL --> CONF
     end
 
-    RK --> E[Explanation builder<br/>retrieved description + score reasons]
-    RK --> C[Confidence score<br/>top score / max score]
-    C -- below threshold --> LC[Flag as low confidence]
-    E --> OUT([Top K recommendations with explanation + confidence])
-    LC --> OUT
+    CSV[("data/songs.csv")] --> SC
+    RET -- "related weights + descriptions" --> SC
+    KB -. "file missing: baseline scoring" .-> RANK
 
-    OUT --> H{{Human review of output}}
+    CONF --> OUT([Top K songs with score,<br/>confidence, explanation, flags])
+    OUT --> HUMAN{{"Human review<br/>reads the flags and decides<br/>whether to trust each pick"}}
 
-    subgraph EVAL[Reliability testing]
-        T[evaluate.py<br/>fixed profiles + bad inputs, pass/fail summary]
-        PT[pytest unit tests]
-    end
+    TESTS["Automated checks<br/>pytest: 50 tests<br/>src/evaluate.py: 16 checks, before vs after"]
+    TESTS -. "feeds fixed inputs" .-> VAL
+    TESTS -. "verifies results" .-> OUT
 
-    T -. runs .-> V
-    T -. checks .-> OUT
-    PT -. checks .-> S
-    H -. feedback informs .-> KB
-
-    V -.-> LOG
-    R -.-> LOG
-    S -.-> LOG
-    T -.-> LOG
+    LOG[("logs/app.log")]
+    GUARD -.-> LOG
+    RAG -.-> LOG
+    CORE -.-> LOG
