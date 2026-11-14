@@ -1,271 +1,85 @@
-# 🎧 Model Card: Music Recommender Simulation
+# Model Card: VibeFinder 2.0
 
-## 1. Model Name  
+## 1. Model Name and Purpose
 
-Give your model a short, descriptive name.  
+**VibeFinder 2.0** is a retrieval-augmented music recommender. Given a listener's favorite genre, mood, target energy and target tempo (or a plain-English request), it looks up what those labels mean in a small knowledge base, scores an 18-song catalog, and returns the top 5 songs with an explanation, a confidence score and warning flags.
 
-**VibeFinder 1.0**
+It extends my Module 3 project, VibeFinder 1.0, which matched genre and mood as exact labels only. The original scoring is kept unchanged as a baseline (`python -m src.main --baseline`). The original model card is still in this repository's git history.
 
----
+**Intended use:** classroom exploration of how retrieval changes a recommender's behavior. **Not intended for:** a real music app, judging anyone's taste, or making claims about fairness across groups. It has never been tested with real listeners.
 
-## 2. Intended Use  
+## 2. How It Works (short version)
 
-Describe what your recommender is designed to do and who it is for. 
+1. **Guardrails** reject empty or non-numeric profiles, clamp out-of-range numbers, and warn on genres or moods the knowledge base does not know.
+2. **Retrieval** reads `knowledge/taste_kb.json` (13 moods, 15 genres) for the listener's genre and mood, including which other labels are related and how strongly.
+3. **Scoring** uses the original VibeFinder 1.0 rules (genre +2.0, mood +1.0, energy up to +1.0, tempo up to +0.5) plus partial credit for related labels: related genre = 2.0 × weight, related mood = 1.0 × weight. Every weight is below 1, so an exact match always beats a related one. The maximum score is 4.5.
+4. **Output** includes an explanation that quotes the retrieved descriptions, a confidence of score ÷ 4.5 (high ≥ 0.70, medium ≥ 0.45, otherwise low), and flags for low confidence and for a large energy gap.
 
-Prompts:  
+There is no LLM and no API key. Retrieval is a JSON lookup and explanations are templates, so every result is deterministic and reproducible.
 
-- What kind of recommendations does it generate  
-- What assumptions does it make about the user  
-- Is this for real users or classroom exploration  
+## 3. Limitations and Bias
 
-**Goal:** VibeFinder suggests the top 5 songs from a small catalog for one
-listener. It predicts which songs best match that listener's favorite genre,
-mood, energy level, and tempo.
+**The catalog is tiny and uneven.** It has 18 songs across 15 genres. Lofi has 3 songs, pop has 2, and the other 13 genres have exactly 1 each. For most genres a "genre match" means one specific song, so that song tends to win no matter how well it fits the rest of the profile. Any conclusion about the system's quality is a conclusion about 18 songs.
 
-**Assumptions:** each listener has one favorite genre and one favorite mood,
-and they know their target energy and tempo.
+**The knowledge base reflects one author's judgment.** I wrote every description and every related-label weight myself (for example, `lofi → ambient 0.6`, `rock → metal 0.6`). Nothing was learned from listening data, so the weights encode my idea of what counts as "related," and a listener who hears these genres differently gets worse results. The genre list is also narrow: it is made of broad popular-music categories (pop, rock, jazz, country, house and so on) and has no entries for many other musical traditions. A listener whose taste lives outside those labels is not represented.
 
-**Intended use:** classroom exploration. It shows how a simple recommender
-turns data into a ranked list with reasons.
+**Listeners the knowledge base does not know are treated worse.** With an unknown genre and mood ("polka" and "grumpy"), the system can only use exact matching on energy and tempo. In my test the top result had confidence 0.30 (low) and no related-label credit was possible. The system is honest about this with warnings, but it still means the quality of recommendations depends on whether a listener's taste fits my labels.
 
-**Not intended for:** real users or a real music app. It should not be used
-to judge anyone's taste or to make claims about fairness across groups,
-because it was never tested with real listeners.
+**Related-genre credit can outweigh a big energy mismatch.** For the Deep Intense Rock profile (target energy 0.92), Glass Cathedral (metal, serene, energy 0.22) ranks #3. It earns +1.20 because metal is related to rock (weight 0.6). It is flagged low confidence with an energy-gap warning, but it still ranks one place above Velvet Meter (funk, energy 0.98), a song whose energy is far closer to what the listener asked for. This is an open problem.
 
----
+**Confidence can look reassuring while hiding a bad match.** Confidence is the score divided by 4.5, and genre and mood make up 3.0 of that. For the conflicting profile (classical, melancholy, energy 0.90), Winter Window (energy 0.02) wins with confidence 0.71, labeled "high." I added an energy-gap flag that fires on that result, but the confidence label itself is still "high." The flag fixes the warning, not the number.
 
-## 3. How the Model Works  
+**Free-text understanding is crude.** Requests are matched to moods by keyword overlap. "Something calm to study to" correctly becomes the chill mood, but a request like "sad rainy day piano" selects no genre, because a genre is only set when its name appears in the text. Anything outside the knowledge base's vocabulary matches nothing and asks the user to name a mood or genre.
 
-Explain your scoring approach in simple language.  
+**Other limits.** Valence, danceability and acousticness are in the data but unused. Explanations are templated and read formulaically. There is no diversity step, so one genre or artist can fill much of a top 5. The catalog has no lyrics, language, artist popularity or listening history.
 
-Prompts:  
+## 4. Could It Be Misused?
 
-- What features of each song are used (genre, energy, mood, etc.)  
-- What user preferences are considered  
-- How does the model turn those into a score  
-- What changes did you make from the starter logic  
+This is a small, offline, low-stakes system, so the realistic risks are modest, but they are real:
 
-Avoid code here. Pretend you are explaining the idea to a friend who does not program.
+- **Treating confidence as accuracy.** A "high" label can sit on a poor match (Winter Window). Someone could read 0.92 average confidence as "92% correct." *Prevention:* the README and this card say what the number measures, the energy-gap flag is shown next to the result, and the output is designed for a human to read the flags and decide.
+- **Using it to judge people.** A recommender built on 18 songs and one author's weights says nothing about anyone's taste, background or character. *Prevention:* the intended-use statement rules this out explicitly.
+- **Steering recommendations.** Because the related-label weights are hand-edited in a JSON file, whoever controls that file controls what gets promoted. In a real product, this could be used to quietly push particular genres or artists. *Prevention:* the knowledge base is plain text in version control, so every change is visible in git history, and the evaluation harness has a consistency check (all related labels exist, all weights between 0 and 1, the catalog fully covered) that fails on malformed edits. It does not detect a deliberate but valid bias.
+- **Privacy if it were deployed.** The logger writes listener profiles to `logs/app.log`. That is fine for synthetic test profiles, but with real users it would store personal preference data. `logs/` is gitignored so logs are not committed. A real deployment would need a retention and consent policy, which this project does not have.
+- **Unsafe input.** Free text is only tokenized and compared with keywords, never executed, and the knowledge base is read as JSON data. Empty, non-numeric and out-of-range input is rejected or clamped before scoring.
 
-My recommender is content-based: it compares each song's attributes to a
-listener's taste profile instead of learning from other users' behavior.
+## 5. What Surprised Me While Testing
 
-**Song features used:** genre, mood, energy, and tempo. The data also has
-valence, danceability, and acousticness, but this version doesn't score them at all.
+- **Clean-looking results hid real problems.** All 50 tests and all 16 evaluation checks passed, and average top-1 confidence was 0.92, but reading the actual recommendations showed two issues that no passing test had caught: "loud gym workout music" selected *metal* (because "loud" is a metal keyword), and Winter Window got "high" confidence for a high-energy listener. The first is fixed (a genre is only set when it is named in the text). The second is flagged, not fully fixed.
+- **Retrieval changed more than the top pick.** The top-1 song stayed the same for all four profiles (scores unchanged: Sunrise City 4.38, Midnight Coding 4.48, Storm Runner 4.48, Winter Window 3.18), but the rest of the list changed for 4 of 4 profiles. In Chill Lofi, Coffee Shop Stories replaced Blue Hour Train at #5. In High-Energy Pop, Rooftop Lights and Gym Hero swapped places at #2 and #3.
+- **Keeping the baseline paid off.** Because the original scoring stayed intact, every claimed improvement could be compared against it instead of just asserted.
+- **My first tests were not testing the system.** The two original tests passed even though the `Recommender` class was an unfinished stub, so I replaced them with tests that fail on that stub.
 
-**User preferences considered:** a favorite genre, a favorite mood, a target
-energy level, and a target tempo.
+## 6. Reliability Evidence
 
-**How a score is built:** every song starts at zero and earns points.
-- 2.0 points if its genre matches the listener's favorite
-- 1.0 point if its mood matches
-- up to 1.0 point for energy, with more points the closer the song's energy
-  is to the target
-- up to 0.5 points for tempo, scored the same way
+Automated results (all in the README): 50 pytest tests pass, the evaluation harness passes 16 of 16 checks, and average top-1 confidence across the four profiles is 0.92. The table below also includes my own review of cases that the harness does not treat as failures.
 
-The highest possible score is 4.5. The system scores all 18 songs, sorts them
-from highest to lowest, and returns the top five, along with the reasons each
-song earned its points.
+| Test input | Evaluation criteria | Result |
+|---|---|---|
+| Empty profile | Rejected with a clear message | Pass |
+| `target_energy = "loud"` | Rejected, not scored | Pass |
+| `target_energy = 1.8` | Clamped to 1.0 with a warning | Pass |
+| Genre "polka", mood "grumpy" | Warns twice, continues, low confidence | Pass (top confidence 0.30) |
+| "something calm to study to" | Maps to the chill mood, no invented genre | Pass |
+| "loud gym workout music" | Mood intense, no genre invented | Pass after a fix (originally selected metal) |
+| "zzzz qqqq" | Matches nothing, asks user to name a mood or genre | Pass |
+| Chill Lofi vs. baseline | Ranking changes through retrieval | Pass (Coffee Shop Stories enters the top 5) |
+| Conflicting profile (classical, melancholy, energy 0.90) | Top result should not be a near-silent song | Fail, known limitation (Winter Window first, "high" 0.71, energy-gap flag shown) |
+| Deep Intense Rock | No low-energy song in the top 3 | Fail, open limitation (Glass Cathedral at #3) |
+| "sad rainy day piano" | Should lean classical | Fail (no genre selected) |
 
-**Why these weights:** genre counts the most because it is usually the first
-filter listeners apply, mood comes next because it captures the vibe, and
-tempo counts least because it overlaps with energy.
+## 7. Collaboration with AI
 
-**Changes from the starter logic:** the starter only had placeholder
-functions. I added closeness-based scoring for the numeric features (so a
-song nearer the target beats one that is merely higher or lower), a reasons
-list for every score, and tempo as a small extra signal.
+**How I worked with AI:** I used Claude to build the RAG system, tests, diagram and README drafts. I ran everything on my own machine, checked the outputs for tests and evaluate, and pushed the commits myself. Claude also packaged the new files as a zip and gave me a `tar -xf` command to unpack them into the repo, which was much faster than adding each file by hand.
 
----
+**Suggestion I accepted:** Claude drew the architecture diagram as a Mermaid file and redrew it after the code changed. I questioned whether I should write it myself, but kept it because the brief only requires a Mermaid file and I checked that it matched my project.
 
-## 4. Data  
+**Suggestion I did not accept as written:** When bare `pytest` failed with `ModuleNotFoundError: No module named 'src'`, Claude offered to add a `pytest.ini`. I used `python -m pytest` instead, which gives the same result without an extra file. The README tells readers to use it and says why. I felt `python -m pytest` was easier because it was more consistent with the original project (VibeFinder 1.0).
 
-Describe the dataset the model uses.  
+## 8. What I Would Do Next
 
-Prompts:  
-
-- How many songs are in the catalog  
-- What genres or moods are represented  
-- Did you add or remove data  
-- Are there parts of musical taste missing in the dataset  
-
-The catalog has 18 songs and 15 genres. I started with 10 songs and added 8.
-Each song has genre, mood, energy, tempo (BPM), valence, danceability, and
-acousticness. The scoring only uses genre, mood, energy, and tempo.
-
-The data is small and uneven. Lofi has 3 songs and pop has 2. The other 13
-genres have 1 song each. Chill appears 3 times, three other moods appear
-twice, and 9 moods appear once. Real musical taste is missing: lyrics,
-language, artist, and listening history are not in the data.
-
----
-
-## 5. Strengths  
-
-Where does your system seem to work well  
-
-Prompts:  
-
-- User types for which it gives reasonable results  
-- Any patterns you think your scoring captures correctly  
-- Cases where the recommendations matched your intuition  
-
-The system works best when a listener's genre, mood, and energy agree. Chill
-Lofi gave the three lofi songs first, then a calm ambient song, which matched
-my intuition. Deep Intense Rock put Storm Runner first, which is correct.
-
-Different tastes gave very different lists. Chill Lofi and Deep Intense Rock
-shared no songs. Every recommendation also comes with reasons, like "genre
-match (+2.0)," so it is easy to see why a song ranked where it did.
-
----
-
-## 6. Limitations and Bias 
-
-Where the system struggles or behaves unfairly. 
-
-Prompts:  
-
-- Features it does not consider  
-- Genres or moods that are underrepresented  
-- Cases where the system overfits to one preference  
-- Ways the scoring might unintentionally favor some users  
-
-The system lets genre and mood labels outweigh the numbers. A genre match is
-worth 2.0 points and a mood match 1.0, while energy and tempo together are
-worth at most 1.5. When I tested a listener who wanted classical,
-melancholy music with high energy (0.90), the top result was Winter Window,
-a nearly silent piano piece with energy 0.02. Its genre and mood matches
-added 3.0 points, which outweighed the fact that its energy was nowhere near
-what the listener wanted. The catalog makes this worse: 13 of the 15 genres
-have only one song, so a single label match tends to win no matter how poor
-the song is on everything else. The system also ignores valence,
-danceability, and acousticness, so listeners who care about those can't
-express it.
-
-
----
-
-## 7. Evaluation  
-
-How you checked whether the recommender behaved as expected. 
-
-Prompts:  
-
-- Which user profiles you tested  
-- What you looked for in the recommendations  
-- What surprised you  
-- Any simple tests or comparisons you ran  
-
-No need for numeric metrics unless you created some.
-
-**Profiles tested:** High-Energy Pop (pop, happy, energy 0.90), Chill Lofi
-(lofi, chill, energy 0.40), Deep Intense Rock (rock, intense, energy 0.92),
-and a deliberately conflicting profile (classical, melancholy, energy 0.90).
-I looked at whether each top 5 matched what a real listener with that taste
-would expect, and whether the scoring reasons made sense.
-
-**What surprised me:**
-- The same songs kept appearing. Gym Hero, Sunrise City, and Storm Runner
-  showed up in three of the four lists.
-- A nearly silent piano piece (Winter Window) was the top pick for someone
-  who wanted high energy.
-- Pop and Rock got exactly the same five songs, just in a different order.
-
-**Comparing pairs of profiles:**
-- **Pop vs. Lofi:** no songs overlap. Pop pulls bright, high-energy tracks
-  (Sunrise City), and Lofi pulls calm, slow ones (Midnight Coding). This
-  makes sense because their genre, mood, and energy targets are all completely
-  different.
-- **Pop vs. Rock:** the same five songs, reordered. Each profile's own genre
-  song wins (Sunrise City for Pop, Storm Runner for Rock), then the rest are
-  high-energy songs. The catalog has only one rock song, so once it is used
-  up, Rock falls back on the same energetic songs Pop uses.
-- **Pop vs. Conflicting:** three songs appear in both lists (Gym Hero, Storm
-  Runner, Sunrise City), because both profiles want energy 0.90. The
-  Conflicting profile then puts Winter Window first because of its genre
-  and mood matches.
-- **Lofi vs. Rock:** no overlap, and they are opposites: low energy and slow
-  versus high energy and fast. That is the result I expected from two
-  listeners with opposite tastes.
-- **Lofi vs. Conflicting:** no overlap. Lofi stays calm all the way down its
-  list. The Conflicting profile is pulled between a calm genre and mood
-  (classical, melancholy) and a loud energy target, so its list starts with
-  two low-energy songs (Winter Window, Slow Motion Lights) and then switches
-  to loud ones.
-- **Rock vs. Conflicting:** Gym Hero, Storm Runner, and Sunrise City appear
-  in both because both want high energy. The difference is the top spot:
-  Rock's winner matches the genre, the mood, and the energy, while the
-  Conflicting profile's winner matches only the labels.
-
-**Why Gym Hero keeps showing up for "Happy Pop":** Gym Hero is a pop song,
-so it earns the full 2.0 genre points, and its energy (0.93) is almost
-exactly what a high-energy listener wants. It is not happy, because its
-mood is "intense," so it misses the 1.0 mood points, but that still leaves
-it ahead of every song that is happy but not pop. The system rewards "same
-genre and same energy" more than "same mood," so a workout song can land in
-a happy playlist.
-
----
-
-## 8. Future Work  
-
-Ideas for how you would improve the model next.  
-
-Prompts:  
-
-- Additional features or preferences  
-- Better ways to explain recommendations  
-- Improving diversity among the top results  
-- Handling more complex user tastes  
-
-- Score valence, danceability, and acousticness, and use the `likes_acoustic`
-  idea so listeners can ask for acoustic music.
-- Give partial credit for similar moods and genres, so "chill" and "relaxed"
-  are not a total miss.
-- Add a diversity step so one artist or genre cannot fill most of the top 5.
-- Support listeners with mixed tastes, for example two favorite genres.
-
----
-
-## 9. Personal Reflection  
-
-A few sentences about your experience.  
-
-Prompts:  
-
-- What you learned about recommender systems  
-- Something unexpected or interesting you discovered  
-- How this changed the way you think about music recommendation apps 
-
-
-**Biggest learning moment:** My biggest learning moment was seeing Winter
-Window rank first for a listener who wanted high energy. The song's energy
-was 0.02 and the listener wanted 0.90, but its genre and mood matches added
-3.0 points. I learned that the weights are choices I made, not facts. When I
-halved the genre bonus and doubled the energy score, Winter Window fell from
-first to third. I now see that the people who design
-the system decide what it prioritizes through the weights they choose.
-
-**How AI helped, and when I double-checked it:** AI wrote my first versions
-of `load_songs`, `score_song`, `recommend_songs`, and the output formatting,
-which saved a lot of time. I still had to check it. I ran `score_song` on
-Library Rain and compared the result (about 4.41) with the number I worked
-out by hand in my README. The starter `main.py` used different profile
-keys than my scoring code, which caused a `KeyError`, so I had to make the
-pieces fit my own design. The starter `main.py` also imported `recommender` instead of
-`src.recommender`, which made `python -m src.main` fail until I fixed the
-import. 
-
-**What surprised me:** I was surprised that a few weighted points could
-produce lists that felt like real recommendations. Chill Lofi returned the
-three lofi songs and then a calm ambient song, and each result came with a
-reason like "genre match (+2.0)." I think the reasons make the list feel
-smart even though the math is simple. It also made me realize that an
-explanation can make a recommendation feel convincing even when the scoring
-weights leave out other qualities a listener may care about.
-
-**What I would try next:** I would score acousticness and valence, give
-partial credit for similar moods like "chill" and "relaxed," and add a
-diversity step so one artist or genre cannot fill the top 5. I would also
-add more songs, since 13 of my 15 genres have only one song.
+- Add many more songs, so most genres have more than one entry and the results are no longer decided by single songs.
+- Make confidence account for the energy fit, so a near-silent song cannot be "high" confidence for a high-energy request.
+- Cap or scale related-genre credit when the energy gap is large (the Glass Cathedral case).
+- Use valence, danceability and acousticness, and add a diversity step to the top 5.
+- Test with real listeners instead of hand-picked profiles, and review the related-label weights with more than one person.
