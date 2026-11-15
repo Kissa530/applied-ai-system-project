@@ -438,3 +438,7 @@ applied-ai-system-project/
     ├── test_rag.py
     └── test_guardrails.py
 ```
+
+## Portfolio Reflection
+
+I built VibeFinder 2.0, a retrieval-augmented music recommender, by extending my own Module 3 project. The original scoring treated genre and mood as exact labels, so I added a knowledge base that lets related labels earn partial credit, and I kept the original scoring as a baseline so I could measure the change. I didn’t stop at a working demo. With Claude’s help, I built and verified 50 tests, a 16-check evaluation harness, input guardrails, logging and confidence scores. When the results looked fine but weren’t, like “loud gym workout music” selecting metal, or a nearly silent song getting “high” confidence for a high-energy listener, I made sure the fixes were tested and documented what I couldn’t fix. This project shows that I treat AI as something to test and measure rather than just blindly trusting it. It also shows that I’m honest about its limits, since I would rather report an open problem than hide it. I would use AI with clear context in my prompts, and I would always run and check what it produces, like I did here. Code: https://github.com/Kissa530/applied-ai-system-project 
