@@ -49,6 +49,7 @@ This is a small, offline, low-stakes system, so the realistic risks are modest, 
 - **Retrieval changed more than the top pick.** The top-1 song stayed the same for all four profiles (scores unchanged: Sunrise City 4.38, Midnight Coding 4.48, Storm Runner 4.48, Winter Window 3.18), but the rest of the list changed for 4 of 4 profiles. In Chill Lofi, Coffee Shop Stories replaced Blue Hour Train at #5. In High-Energy Pop, Rooftop Lights and Gym Hero swapped places at #2 and #3.
 - **Keeping the baseline paid off.** Because the original scoring stayed intact, every claimed improvement could be compared against it instead of just asserted.
 - **My first tests were not testing the system.** The two original tests passed even though the `Recommender` class was an unfinished stub, so I replaced them with tests that fail on that stub.
+- **The weights are choices, not facts.** In VibeFinder 1.0, halving the genre bonus and doubling the energy score dropped Winter Window from first to third. The same label-heavy scoring is still the base of 2.0, which is why Winter Window still wins the conflicting profile.
 
 ## 6. Reliability Evidence
 
