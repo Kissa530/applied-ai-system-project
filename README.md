@@ -421,7 +421,6 @@ I expected retrieval to look up a listener’s genre and mood, and it did. What 
 applied-ai-system-project/
 ├── README.md
 ├── model_card.md
-├── ai_interactions.md
 ├── requirements.txt
 ├── assets/architecture.png
 ├── diagrams/architecture.mmd
